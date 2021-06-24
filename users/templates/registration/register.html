@@ -2,12 +2,11 @@
 
 {% block content%}
 
-    <form method="post" action="{% url 'users:register' %}">
-        {% crsf_token %}index
+    <form action="{% url 'users:register' %}" method="post">
+        {% csrf_token %}
         {{ form.as_p }}
-
-        <button name="submit">Register</button>
-        <input type="hidden" name="next" value="{% url 'learning_logs:' %}" />
+        <button name="submit">Add topic</button>
+        <input type="hidden" name="next" value="{% url 'learning_logs:index' %}" />
     </form>
 
 {% endblock content %}

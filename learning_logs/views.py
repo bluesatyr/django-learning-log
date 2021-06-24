@@ -8,6 +8,10 @@ def index(request):
     """The home page for the learning log."""
     return render(request, 'learning_logs/index.html')
 
+def check_topic_owner(owner, user):
+    if owner != user:
+        raise Http404
+
 @login_required
 def topics(request):
     """Show all topics"""
@@ -20,8 +24,7 @@ def topic(request, topic_id):
     """Show a single topic and all its entries"""
     topic = Topic.objects.get(id=topic_id)
     # Make sure the topic belongs to the current user
-    if topic.owner != request.user:
-        raise Http404
+    check_topic_owner(topic.owner, request.user)
 
     entries = topic.entry_set.order_by('-date_added') # minus-sign sorts in reverse order
     context = {'topic': topic, 'entries': entries}
@@ -37,8 +40,11 @@ def new_topic(request):
         # POST data submitted; process data
         form = TopicForm(data=request.POST)
         if form.is_valid():
-            form.save()
-            return redirect('learning_logs/new_topic.html')
+            # add an owner (user) to this new topic
+            new_topic = form.save(commit=False)
+            new_topic.owner = request.user
+            new_topic.save()
+            return redirect('learning_logs:topics')
     # Display a blank or invalid form
     context = {'form': form}
     return render(request, 'learning_logs/new_topic.html', context)
@@ -47,6 +53,7 @@ def new_topic(request):
 def new_entry(request, topic_id):
     """Add a new entry"""
     topic = Topic.objects.get(id=topic_id)
+    check_topic_owner(topic.owner, request.user)
 
     if request.method != 'POST':
         # No POST data submitted; create a blank form
@@ -71,7 +78,9 @@ def edit_entry(request, entry_id):
     """Edit an entry"""
     entry = Entry.objects.get(id=entry_id)
     topic = entry.topic
-
+    # Make sure the entry belongs to the current user
+    check_topic_owner(topic.owner, request.user)
+        
     if request.method != 'POST':
         # Initial request; pre-fill form with current entry
         form = EntryForm(instance=entry)
