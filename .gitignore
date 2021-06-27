@@ -11,3 +11,4 @@ build/
 *.egg-info/
 ll_env/
 .vscode/
+*.sqlite3
